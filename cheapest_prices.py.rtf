@@ -1,0 +1,33 @@
+from sqlalchemy.orm import Session
+from backend.database import SessionLocal
+from backend.models import Product, PriceEntry
+
+def cheapest_for(product_name: str):
+    session = SessionLocal()
+
+    # Find the first product matching the partial name (case-insensitive)
+    product = session.query(Product).filter(Product.name.ilike(f"%{product_name}%")).first()
+    if not product:
+        print(f"No products found matching '{product_name}'")
+        session.close()
+        return
+
+    # Get the cheapest price entry for this product
+    cheapest = session.query(PriceEntry).filter(
+        PriceEntry.product_id == product.id
+    ).order_by(PriceEntry.price.asc()).first()
+
+    if cheapest:
+        print(f"{product.name} - Cheapest at {cheapest.store.name}: R{cheapest.price:.2f}")
+    else:
+        print(f"{product.name} - No price data available")
+
+    session.close()
+
+
+if __name__ == "__main__":
+    while True:
+        search = input("Enter product name (or 'exit' to quit): ").strip()
+        if search.lower() == "exit":
+            break
+        cheapest_for(search)
